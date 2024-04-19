@@ -1,0 +1,17 @@
+[Unit]
+Description=Frontend service for web-application
+After=network.target backendpy3.service
+
+[Service]
+Type=simple
+WorkingDirectory=/usr/local/eto-app/frontend/build
+EnvironmentFile=-/usr/local/eto-app/frontend/env2
+ExecStart=/usr/local/eto-app/frontend/run2
+Restart=on-failure
+RestartSec=42s
+KillMode=control-group
+KillSignal=SIGKILL
+SuccessExitStatus=SIGKILL
+
+[Install]
+WantedBy=multi-user.target

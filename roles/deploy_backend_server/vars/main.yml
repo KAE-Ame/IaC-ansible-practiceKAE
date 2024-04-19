@@ -1,0 +1,6 @@
+---
+# vars file for deploy_backend_server
+proj_fold: /usr/local/eto-app/
+back_fold: /usr/local/eto-app/backend/
+front_fold: /usr/local/eto-app/frontend/
+daemon_fold: /etc/systemd/system/

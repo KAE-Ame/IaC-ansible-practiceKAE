@@ -1,0 +1,86 @@
+---
+# tasks file for deploy_backend_server
+- name: Install git
+  dnf:
+    name: git
+    state: latest
+
+- name: Install nodejs
+  dnf:
+    name: nodejs
+    state: latest
+
+- name: Clone proj from github
+  git:
+    repo: https://github.com/etoosamoe/eto-app.git
+    dest: "{{ proj_fold }}"
+    version: master
+
+- name: Install pip
+  shell:
+    cmd: "python3 -m ensurepip"
+
+- name: Install dependencies for back
+  shell:
+    chdir: "{{ back_fold }}"
+    cmd: "python3 -m pip install -r requirements.txt"
+
+- name: Install dependencies for front
+  shell:
+    chdir: "{{ front_fold }}"
+    cmd: "npm ci"
+
+- name: Build static files
+  shell:
+    chdir: "{{ front_fold }}"
+    cmd: "npm run build"
+
+- name: Copy env file for back
+  copy: 
+    src: "env1"
+    dest: "{{ back_fold }}env1"
+    mode: 644
+
+- name: Copy shell script for back
+  copy: 
+    src: "run1"
+    dest: "{{ back_fold }}run1"
+    mode: 744
+
+- name: Copy env file for front
+  copy: 
+    src: "env2"
+    dest: "{{ front_fold }}env2"
+    mode: 644
+
+- name: Copy shell script front
+  copy: 
+    src: "run2"
+    dest: "{{ front_fold }}run2"
+    mode: 744
+
+- name: Copy .service file for back
+  copy: 
+    src: "backendpy3.service"
+    dest: "{{ daemon_fold }}"
+    mode: 644
+
+- name: Copy .service file for front
+  copy: 
+    src: "frontend_nodejs.service"
+    dest: "{{ daemon_fold }}"
+    mode: 644
+
+- name: Systemd configure back
+  systemd:
+    name: backendpy3
+    daemon_reload: true
+    state: started
+    enabled: true
+
+- name: Systemd configure front
+  systemd:
+    name: frontend_nodejs
+    daemon_reload: true
+    state: started
+    enabled: true
