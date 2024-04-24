@@ -1,0 +1,17 @@
+[Unit]
+Description=Backend service for web-application
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/usr/local/eto-app/backend
+EnvironmentFile=-/usr/local/eto-app/backend/env1
+ExecStart=/usr/local/eto-app/backend/run1
+Restart=on-failure
+RestartSec=42s
+KillMode=control-group
+KillSignal=SIGKILL
+SuccessExitStatus=SIGKILL
+
+[Install]
+WantedBy=multi-user.target

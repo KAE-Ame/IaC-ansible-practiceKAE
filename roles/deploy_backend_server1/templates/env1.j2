@@ -1,5 +1,5 @@
 #DB_CONN="postgresql://etoapp:password@db:5432/etoapp"
-DB_CONN='sqlite:///database.db'
+DB_CONN='mysql+mysqlconnector://backend-server1:{{ back1_pass }}@{{ DBmast }}:3306/backend_db'
 
 # 8000 = default
 PYTHONPATH=$PWD

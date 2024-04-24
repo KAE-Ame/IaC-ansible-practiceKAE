@@ -1,0 +1,114 @@
+---
+# tasks file for deploy_DBmaster
+- name: SELinux
+  selinux:
+    policy: targeted
+    state: permissive
+
+- name: Install mysql
+  dnf:
+    name: mysql-server
+    state: latest
+
+- name: Start mysql
+  systemd:
+    name: mysqld
+    enabled: true
+    state: "started"
+
+- name: Install pip
+  shell:
+    cmd: "python3 -m ensurepip"
+
+- name: Install pymysql
+  shell:
+    cmd: "python3 -m pip install pymysql"
+
+- name: Set the root password
+  mysql_user: 
+    name: root 
+    host: localhost
+    password: "{{ root_pass }}"
+    state: present
+
+- name: Drop conf for ansible
+  template:
+    src: .my.j2
+    dest: /root/.my.cnf
+    mode: 644
+
+- name: Remove all anonymous user accounts
+  mysql_user:
+    name: ''
+    host_all: true
+    state: absent
+
+- name: Ensure that root can login only from localhost
+  mysql_user: 
+    name: root 
+    host: "{{ DBmast }}" 
+    state: absent
+
+- name: Remove mysql test database
+  mysql_db: 
+    name: test 
+    state: absent
+
+- name: Create database for backend
+  mysql_db:
+    name: backend_db
+    state: present
+
+- name: Copy config file for mysql
+  copy:
+    src: mysql-server.cnf
+    dest: /etc/my.cnf.d/mysql-server.cnf
+    mode: 644
+
+- name: Restart mysql
+  systemd:
+    name: mysqld
+    state: "restarted"
+
+- name: Create backend user1
+  mysql_user: 
+    name: backend-server1 
+    host: "{{ back1host }}"
+    password: "{{ back1_pass }}"
+    priv: 'backend_db.*:ALL'
+    state: present
+    tls_requires:
+
+- name: Create backend user2
+  mysql_user: 
+    name: backend-server2 
+    host: "{{ back2host }}"
+    password: "{{ back2_pass }}"
+    priv: 'backend_db.*:ALL'
+    state: present
+    tls_requires:
+
+- name: Create slave user
+  mysql_user: 
+    name: slave 
+    host: "{{ DBslave }}"
+    password: "{{ slave_pass }}"
+    priv: "*.*:REPLICATION SLAVE"
+    state: present
+    tls_requires:
+
+- name: Show master status
+  mysql_replication:
+    mode: getprimary
+
+- name: Dump database
+  mysql_db:
+    state: dump
+    name: backend_db
+    master_data: 1
+    target: /tmp/dump.sql
+
+- name: Download dump from master
+  fetch:
+    src: /tmp/dump.sql
+    dest: "{{ local_dump_loc }}/dump.sql"

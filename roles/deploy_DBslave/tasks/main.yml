@@ -1,0 +1,117 @@
+---
+# tasks file for deploy_DBslave
+- name: SELinux
+  selinux:
+    policy: targeted
+    state: permissive
+
+- name: Install mysql
+  dnf:
+    name: mysql-server
+    state: latest
+
+- name: Start mysql
+  systemd:
+    name: mysqld
+    enabled: true
+    state: "started"
+
+- name: Install pip
+  shell:
+    cmd: "python3 -m ensurepip"
+
+- name: Install pymysql
+  shell:
+    cmd: "python3 -m pip install pymysql"
+
+- name: Set the root password
+  mysql_user: 
+    name: root 
+    host: localhost
+    password: "{{ root_pass }}"
+    state: present
+
+- name: Drop conf for ansible
+  template:
+    src: .my.j2
+    dest: /root/.my.cnf
+    mode: 644
+
+- name: Remove all anonymous user accounts
+  mysql_user:
+    name: ''
+    host_all: true
+    state: absent
+
+- name: Ensure that root can login only from localhost
+  mysql_user: 
+    name: root 
+    host: "{{ DBslave }}" 
+    state: absent
+
+- name: Remove mysql test database
+  mysql_db: 
+    name: test 
+    state: absent
+
+- name: Copy config file for mysql
+  copy:
+    src: mysql-server.cnf
+    dest: /etc/my.cnf.d/mysql-server.cnf
+    mode: 644
+
+- name: Restart mysql
+  systemd:
+    name: mysqld
+    state: "restarted"
+
+- name: Create database for backend
+  mysql_db:
+    name: backend_db
+    state: present
+
+- name: Stop slave
+  mysql_replication:
+    mode: stopreplica 
+
+- name: Copy database dump
+  copy: 
+    src: "{{ local_dump_loc }}/dump.sql"
+    dest: /tmp/dump.sql
+    mode: 644
+
+- name: Import database dump
+  mysql_db:
+    state: import
+    name: backend_db
+    target: /tmp/dump.sql/dump.sql/masterDB/tmp/dump.sql
+
+- name: Just ensure1
+  mysql_user: 
+    name: backend-server1 
+    host_all: true
+    state: absent
+
+- name: Just ensure2
+  mysql_user: 
+    name: backend-server2 
+    host_all: true
+    state: absent
+
+- name: Just ensure3
+  mysql_user: 
+    name: slave 
+    host_all: true
+    state: absent
+
+- name: Configure mysql slave
+  mysql_replication:
+    primary_host: "{{ DBmast }}"
+    primary_port: 3306
+    primary_user: "slave"
+    primary_password: "{{ slave_pass }}"
+    mode: changeprimary
+
+- name: Start slave
+  mysql_replication:
+    mode: startreplica
