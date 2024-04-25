@@ -31,3 +31,11 @@
   roles:
     - role: deploy_backend_server2
       when: "ansible_facts['os_family'] == 'RedHat'"
+
+- name: Deploy loadbalancer
+  hosts: haproxy_loadbalancer
+  become: yes
+
+  roles:
+    - role: deploy_haproxy
+      when: "ansible_facts['os_family'] == 'RedHat'"

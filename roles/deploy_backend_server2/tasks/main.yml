@@ -1,5 +1,10 @@
 ---
 # tasks file for deploy_backend_server
+- name: SELinux
+  selinux:
+    policy: targeted
+    state: permissive
+
 - name: Install git
   dnf:
     name: git

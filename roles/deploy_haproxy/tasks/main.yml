@@ -1,0 +1,23 @@
+---
+# tasks file for deploy_haproxy
+- name: SELinux
+  selinux:
+    policy: targeted
+    state: permissive
+
+- name: Install HAProxy
+  dnf:
+    name: haproxy
+    state: latest
+
+- name: Copy config for HAProxy
+  template:
+    src: haproxy.j2
+    dest: /etc/haproxy/haproxy.cfg
+    mode: 644
+
+- name: Start HAProxy
+  systemd:
+    name: haproxy
+    enabled: true
+    state: "started"
